@@ -215,22 +215,13 @@ A reduced “partial GLM” model was therefore created using statistically sign
 
 ## Results Summary
 
-| Model | Purpose |
-|---|---|
-| Full GLM | Interpretable baseline model |
-| Partial GLM | Reduced interpretable model using statistically significant variables |
-| Ridge/Lasso | Regularized logistic regression |
-| Decision Tree | Explainable nonlinear model |
-| Random Forest | Best predictive performance |
-
-| Model | AUC |
-|---|---|
-| Full GLM | 0.881 |
-| Partial GLM | 0.881 |
-| Ridge | 0.880 |
-| Lasso | 0.881 |
-| Decision Tree | 0.839 | 
-| Random Forest | 0.906 |
+| Model | Purpose | AUC |
+|---|---|---|
+| Full GLM | Interpretable baseline model | 0.881 |
+| Partial GLM | Reduced interpretable model using statistically significant variables | 0.881 |
+| Ridge/Lasso | Regularized logistic regression | 0.880/ 0.881 |
+| Decision Tree | Explainable nonlinear model | 0.839 |
+| Random Forest | Best predictive performance | 0.906 |
 
 Final results showed that tree-based ensemble methods captured nonlinear fraud behavior more effectively than linear models.
 
