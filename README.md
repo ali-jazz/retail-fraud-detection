@@ -64,6 +64,7 @@ To create a more realistic fraud detection scenario and improve model interpreta
 Another important consideration is the class distribution of the dataset. The fraud and non-fraud classes were relatively balanced, which simplified the modeling process and reduced the need for advanced imbalance handling techniques. However, in real-world fraud detection systems, fraudulent transactions are typically rare events and datasets are often highly imbalanced. As a result, the predictive performance observed in this project may be more optimistic than what would be expected in a real production environment.
 
 These limitations highlight the importance of understanding data generation processes, feature leakage risks, and the realism of modeling assumptions when developing fraud detection systems.
+
 ---
 ## Tools & Libraries
 
