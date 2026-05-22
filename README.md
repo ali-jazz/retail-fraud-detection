@@ -41,7 +41,7 @@ The project was designed to answer the following business questions:
 
 ### Source
 
-Kaggle Retail Fraud Detection Dataset
+Source: Kaggle Retail Fraud Detection Dataset https://www.kaggle.com/datasets/noopurbhatt/retail-intelligence-fraud-detection-dataset
 
 The dataset contains simulated retail transaction data, including:
 
@@ -53,7 +53,18 @@ The dataset contains simulated retail transaction data, including:
 - transaction frequency metrics
 
 ---
+## Data Limitations
 
+Several limitations were identified during the analysis process.
+
+First, some variables appeared to be extremely predictive of fraudulent activity and initially produced near-perfect model performance in the GLM model. This resulted in statistical issues such as quasi-perfect separation, unstable coefficients, and unrealistic predictive behavior. These variables likely originated from pre-engineered fraud detection logic or previously modeled fraud indicators embedded within the dataset itself.
+
+To create a more realistic fraud detection scenario and improve model interpretability, some highly deterministic fraud-related variables were removed or excluded from certain modeling stages. This allowed the models to rely more heavily on behavioral transaction patterns rather than near-direct fraud indicators.
+
+Another important consideration is the class distribution of the dataset. The fraud and non-fraud classes were relatively balanced, which simplified the modeling process and reduced the need for advanced imbalance handling techniques. However, in real-world fraud detection systems, fraudulent transactions are typically rare events and datasets are often highly imbalanced. As a result, the predictive performance observed in this project may be more optimistic than what would be expected in a real production environment.
+
+These limitations highlight the importance of understanding data generation processes, feature leakage risks, and the realism of modeling assumptions when developing fraud detection systems.
+---
 ## Tools & Libraries
 
 ### Tools
@@ -74,6 +85,7 @@ The dataset contains simulated retail transaction data, including:
 - corrplot
 - vip
 - yardstick
+- lubridate
 
 ---
 
@@ -146,6 +158,22 @@ Models were evaluated using:
 
 ## Key Findings
 
+### 1. Fraud Detection Feasibility
+
+The analysis demonstrated that fraudulent retail transactions can effectively be detected using customer and transaction behavior variables. Several models achieved strong predictive performance, suggesting that transaction behavior contains meaningful fraud-related signals.
+
+---
+
+### 2. Best Performing Model
+
+Among all evaluated models, the Random Forest model achieved the highest AUC score, indicating superior predictive performance compared to linear models such as Logistic Regression, Ridge, and Lasso Regression.
+
+This suggests that nonlinear relationships and interaction effects between variables play an important role in fraud detection.
+
+---
+
+### 3. Important Fraud Indicators
+
 Several behavioral variables appeared strongly associated with fraudulent activity, including:
 
 - unusual transaction locations
@@ -154,13 +182,19 @@ Several behavioral variables appeared strongly associated with fraudulent activi
 - failed transaction attempts
 - transaction velocity indicators
 
-The Random Forest model achieved the highest AUC score, suggesting superior predictive performance compared to linear models.
-
-However, Logistic Regression remained valuable for interpretability and business understanding through coefficient analysis and odds ratios.
+These findings suggest that behavioral transaction patterns may be more informative for fraud detection than static customer characteristics alone.
 
 ---
 
-## Important Analytical Considerations
+### 4. Interpretability vs Predictive Performance
+
+While Random Forest achieved the strongest predictive performance, Logistic Regression remained valuable for interpretability and business understanding through coefficient analysis and odds ratios.
+
+This highlights the tradeoff between predictive power and model interpretability in fraud analytics.
+
+---
+
+## Modeling Challenges
 
 During the analysis, some variables initially produced near-perfect prediction behavior in the GLM model, leading to:
 
@@ -188,10 +222,25 @@ A reduced “partial GLM” model was therefore created using statistically sign
 | Decision Tree | Explainable nonlinear model |
 | Random Forest | Best predictive performance |
 
+| Model | AUC |
+|---|---|
+| Full GLM | 0.881 |
+| Partial GLM | 0.881 |
+| Ridge | 0.880 |
+| Lasso | 0.881 |
+| Decision Tree | 0.839 | 
+| Random Forest | 0.906 |
+
 Final results showed that tree-based ensemble methods captured nonlinear fraud behavior more effectively than linear models.
 
 ---
+## Business Recommendations
 
+- Prioritize behavioral monitoring
+- Flag transaction bursts
+- Monitor unusual geographic behavior
+  
+---
 ## Future Improvements
 
 Potential future improvements include:
@@ -202,7 +251,8 @@ Potential future improvements include:
 - More realistic class imbalance handling
 - Feature importance explainability using SHAP values
 - Comparison with additional variable selection techniques
-
+- Additional feature engineering based on interaction effects between behavioral variables
+  
 ---
 
 ## Repository Structure
@@ -211,6 +261,7 @@ Potential future improvements include:
 ├── data/
 ├── Retail_Fraud.Rmd
 ├── Retail_Fraud.html
+├── Images/
 ├── README.md
 ```
 
