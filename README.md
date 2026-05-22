@@ -219,7 +219,7 @@ A reduced “partial GLM” model was therefore created using statistically sign
 |---|---|---|
 | Full GLM | Interpretable baseline model | 0.881 |
 | Partial GLM | Reduced interpretable model using statistically significant variables | 0.881 |
-| Ridge/Lasso | Regularized logistic regression | 0.880/ 0.881 |
+| Ridge/Lasso | Regularized logistic regression | 0.880 / 0.881 |
 | Decision Tree | Explainable nonlinear model | 0.839 |
 | Random Forest | Best predictive performance | 0.906 |
 
