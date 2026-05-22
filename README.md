@@ -1,6 +1,6 @@
 # Retail Fraud Detection Analysis
 
-# Project Overview
+## Project Overview
 
 This project explores fraud detection using statistical and machine learning techniques in R. The objective was to identify behavioral patterns associated with fraudulent retail transactions and compare the predictive performance of several classification models.
 
@@ -21,7 +21,7 @@ Several models were developed and compared, including:
 
 ---
 
-# Business Objectives
+## Business Objectives
 
 The project was designed to answer the following business questions:
 
@@ -33,13 +33,13 @@ The project was designed to answer the following business questions:
 
 ---
 
-# Dataset
+## Dataset
 
-## Dataset Used
+### Dataset Used
 
 `retail_fraud_detection_100k.csv`
 
-## Source
+### Source
 
 Kaggle Retail Fraud Detection Dataset
 
@@ -54,14 +54,14 @@ The dataset contains simulated retail transaction data, including:
 
 ---
 
-# Tools & Libraries
+## Tools & Libraries
 
-## Tools
+### Tools
 
 - R
 - RStudio
 
-## Main Libraries
+### Main Libraries
 
 - tidyverse
 - caret
@@ -77,16 +77,16 @@ The dataset contains simulated retail transaction data, including:
 
 ---
 
-# Project Workflow
+## Project Workflow
 
-## 1. Data Import
+### 1. Data Import
 
 - Imported raw transaction dataset
 - Inspected variable structure and data types
 
 ---
 
-## 2. Exploratory Data Analysis (EDA)
+### 2. Exploratory Data Analysis (EDA)
 
 - Distribution analysis
 - Fraud vs non-fraud comparisons
@@ -96,7 +96,7 @@ The dataset contains simulated retail transaction data, including:
 
 ---
 
-## 3. Data Cleaning & Preprocessing
+### 3. Data Cleaning & Preprocessing
 
 - Converted categorical variables into factors
 - Removed unnecessary variables
@@ -104,7 +104,7 @@ The dataset contains simulated retail transaction data, including:
 
 ---
 
-## 4. Feature Engineering
+### 4. Feature Engineering
 
 Created additional variables to better capture fraud behavior patterns:
 
@@ -115,13 +115,13 @@ Created additional variables to better capture fraud behavior patterns:
 
 ---
 
-## 5. Train/Test Split
+### 5. Train/Test Split
 
 - 80/20 stratified split using `caret`
 
 ---
 
-## 6. Modeling
+### 6. Modeling
 
 The following models were trained and evaluated:
 
@@ -134,7 +134,7 @@ The following models were trained and evaluated:
 
 ---
 
-## 7. Model Evaluation
+### 7. Model Evaluation
 
 Models were evaluated using:
 
@@ -144,7 +144,7 @@ Models were evaluated using:
 
 ---
 
-# Key Findings
+## Key Findings
 
 Several behavioral variables appeared strongly associated with fraudulent activity, including:
 
@@ -160,7 +160,7 @@ However, Logistic Regression remained valuable for interpretability and business
 
 ---
 
-# Important Analytical Considerations
+## Important Analytical Considerations
 
 During the analysis, some variables initially produced near-perfect prediction behavior in the GLM model, leading to:
 
@@ -178,7 +178,7 @@ A reduced “partial GLM” model was therefore created using statistically sign
 
 ---
 
-# Results Summary
+## Results Summary
 
 | Model | Purpose |
 |---|---|
@@ -192,7 +192,7 @@ Final results showed that tree-based ensemble methods captured nonlinear fraud b
 
 ---
 
-# Future Improvements
+## Future Improvements
 
 Potential future improvements include:
 
@@ -205,7 +205,7 @@ Potential future improvements include:
 
 ---
 
-# Repository Structure
+## Repository Structure
 
 ```text
 ├── data/
@@ -216,9 +216,9 @@ Potential future improvements include:
 
 ---
 
-# Author
+## Author
 
-## Ali Jazzar
+### Ali Jazzar
 
 - Actuarial Analyst
 - Data Analytics & Statistical Modeling Enthusiast
