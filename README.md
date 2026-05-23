@@ -244,6 +244,11 @@ Final results showed that tree-based ensemble methods captured nonlinear fraud b
 - Monitor unusual geographic behavior
   
 ---
+## Fraud Detection Threshold Considerations
+
+In fraud detection systems, false negatives are often more costly than false positives because undetected fraudulent transactions may lead to direct financial losses. For this reason, a lower classification threshold may sometimes be preferred in practice to increase fraud detection sensitivity, even if it results in a higher number of legitimate transactions being flagged for manual review.
+
+---
 ## Future Improvements
 
 Potential future improvements include:
