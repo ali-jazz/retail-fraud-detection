@@ -1,0 +1,864 @@
+---
+title: "Retail_Fraud_Detection"
+author: "Ali Jazzar"
+date: "2026-05-20"
+output: html_document
+---
+
+# Introduction
+
+The objective of this project is to explore whether fraudulent transactions can be effectively identified using transaction and customer-related variables, and to compare different predictive modeling approaches for fraud detection.
+
+This project focuses on two main business questions:
+
+1. Can fraudulent transactions be identified using available predictor variables?
+
+2. Which predictive model performs best at detecting fraudulent transactions while minimizing classification errors?
+
+By answering these questions, the project aims to evaluate the effectiveness of statistical and machine learning approaches for fraud detection and identify the model that provides the strongest predictive performance.
+
+# Data
+
+This project uses the `retail_fraud_detection_100k.csv` dataset obtained from Kaggle:
+
+https://www.kaggle.com/datasets/noopurbhatt/retail-intelligence-fraud-detection-dataset
+
+The dataset contains transaction-level information that can be used to analyze fraud patterns and develop predictive models for fraud detection.
+
+# Methodology
+
+The project follows the steps below:
+
+1. Data Import
+2. Exploratory Data Analysis
+3. Data Cleaning & Preprocessing
+4. Feature Engineering
+5. Train/Test Split
+6. Predictive Modeling
+7. Model Evaluation & Comparison
+
+
+
+# Tools
+
+This project was developed entirely using R and RStudio.
+
+# Libraries
+
+The following R libraries were used throughout the project:
+
+  - tidyverse
+  - caret
+  - glmnet
+  - ranger
+  - pROC
+  - corrplot
+  - ROSE
+  - vip
+  - yardstick
+  - lubridate
+  - rpart
+  - rpart.plot
+
+
+## Libraries installation 
+```{r}
+library(tidyverse)
+library(caret)
+library(glmnet)
+library(ranger)
+library(pROC)
+library(corrplot)
+library(ROSE)
+library(vip)
+library(yardstick)
+library(lubridate)
+library(rpart)
+library(rpart.plot)
+```
+
+## Import Data
+
+```{r}
+df <- read_csv("retail_fraud_detection_100k.csv")
+
+head(df)
+```
+The dataset contains 100,000 observations and 21 variables related to customer transactions, payment behavior, device usage, and fraud indicators.
+
+## Dataset Structure
+
+```{r}
+glimpse(df)
+
+colSums(is.na(df))
+
+str(df)
+```
+The dataset structure was inspected to better understand variable types, identify missing values, and validate the overall data format before preprocessing and modeling.
+
+## Feature Preparation
+
+The following preprocessing steps were performed to prepare the dataset for statistical and machine learning models:
+
+- Converted categorical variables into factor variables
+- Extracted transaction hour information
+- Extracted day-of-week information from transaction timestamps
+```{r}
+df1 <- df
+
+# Convert categorical variables to factor variables
+# for proper handling in statistical and machine learning models.
+
+df1$payment_method <- factor(df1$payment_method)
+df1$device_type <- factor(df1$device_type)
+df1$location <- factor(df1$location)
+df1$merchant_category <- factor(df1$merchant_category)
+
+df1$is_international <- factor(df1$is_international)
+df1$previous_fraud_flag <- factor(df1$previous_fraud_flag)
+df1$unusual_amount_flag <- factor(df1$unusual_amount_flag)
+df1$unusual_location_flag <- factor(df1$unusual_location_flag)
+
+df1$multiple_transactions_short_time <- factor(df1$multiple_transactions_short_time)
+df1$high_risk_device_flag <- factor(df1$high_risk_device_flag)
+df1$velocity_flag <- factor(df1$velocity_flag)
+
+df1$fraud_flag <- factor(df1$fraud_flag)
+df1$fraud_risk <- factor(df1$fraud_risk)
+
+# Extract transaction hour and transaction day information.
+
+df1$transaction_hour <- hour(df1$transaction_timestamp)
+
+df1$transaction_day <- factor(
+  wday(df1$transaction_timestamp, label = TRUE)
+)
+
+```
+
+
+## Exploratory Data Analysis (EDA)
+
+Initial exploratory analysis was performed to better understand the dataset structure, variable distributions, and potential relationships between fraud-related indicators.
+```{r}
+summary(df1)
+
+# Provides an overview of the dataset structure,
+# variable types, and summary statistics.
+
+table(df1$is_international, df1$unusual_location_flag)
+
+# Remove redundant variable due to identical information content.
+
+df1 <- df1 %>%
+  select(-unusual_location_flag)
+```
+```{r}
+df2 <- df1
+
+# Create a weekend/weekday feature from the transaction day.
+# This simplifies the day-of-week variable while keeping useful temporal information.
+
+df2$week_period <- factor(case_when(
+  df2$transaction_day %in% c("Sat", "Sun") ~ "Weekend",
+  TRUE ~ "Weekday"
+))
+
+# Remove timestamp-related variables after extracting useful time-based features.
+# The transaction timestamp itself is not directly used in the models.
+# Additionally, all transaction hours were equal to 19 (7 PM), meaning the transaction_hour variable contained no useful variability for predictive modeling.
+
+df2 <- df2 %>%
+  select(-transaction_timestamp, -transaction_hour, -transaction_day)
+
+
+# Remove fraud_risk because it appears to be a pre-engineered fraud indicator.
+# Keeping this variable could introduce leakage and lead to unrealistic model performance.
+
+df2 <- df2 %>%
+  select(-fraud_risk)
+
+
+# Remove ID variables because they do not provide generalizable predictive information and may increase model complexity without adding analytical value.
+
+df2 <- df2 %>%
+  select(-transaction_id, -customer_id)
+
+```
+The objective was to extract useful information from the `transaction_timestamp` variable while avoiding the direct use of raw timestamp values in the models.
+
+```{r}
+summary(df2$week_period)
+
+# Explore the distribution of transactions between weekdays and weekends.
+```
+```{r}
+# Explore the proportional distribution of fraudulent and non-fraudulent transactions across categorical predictor variables.
+
+prop.table(table(df2$payment_method, df2$fraud_flag), 1)
+
+prop.table(table(df2$device_type, df2$fraud_flag), 1)
+
+prop.table(table(df2$location, df2$fraud_flag), 1)
+
+prop.table(table(df2$merchant_category, df2$fraud_flag), 1)
+
+prop.table(table(df2$previous_fraud_flag, df2$fraud_flag), 1)
+
+prop.table(table(df2$unusual_amount_flag, df2$fraud_flag), 1)
+
+prop.table(table(df2$is_international, df2$fraud_flag), 1)
+
+prop.table(table(df2$multiple_transactions_short_time, df2$fraud_flag), 1)
+
+prop.table(table(df2$high_risk_device_flag, df2$fraud_flag), 1)
+
+prop.table(table(df2$velocity_flag, df2$fraud_flag), 1)
+
+prop.table(table(df2$week_period, df2$fraud_flag), 1)
+
+```
+Several variables appear strongly associated with fraudulent transactions, particularly:
+
+- International transactions
+- Previous fraud history
+- Unusual transaction amounts
+- High transaction velocity
+- Multiple transactions within a short period
+
+These findings suggest that behavioral transaction patterns may play an important role in predictive fraud modeling.
+
+```{r}
+# Explore the distribution of numerical variables by fraud status to identify potential behavioral differences between fraudulent and non-fraudulent transactions.
+
+
+ggplot(df2, aes(x = transaction_amount, fill = factor(fraud_flag))) +
+  geom_density(alpha = 0.4) +
+  labs(
+    title = "Transaction Amount Distribution by Fraud Status",
+    x = "Transaction Amount",
+    fill = "Fraud Flag"
+  )
+
+
+ggplot(df2, aes(x = transaction_frequency_24h, fill = factor(fraud_flag))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  labs(
+    title = "Transaction Frequency in a 24-Hour Period by Fraud Status",
+    x = "Number of Transactions",
+    fill = "Fraud Flag"
+  )
+
+
+ggplot(df2, aes(x = avg_transaction_amount_7d, fill = factor(fraud_flag))) +
+  geom_density(alpha = 0.4) +
+  labs(
+    title = "Average Transaction Amount Over the Last 7 Days by Fraud Status",
+    x = "Average Transaction Amount",
+    fill = "Fraud Flag"
+  )
+
+
+ggplot(df2, aes(x = failed_transaction_count_24h, fill = factor(fraud_flag))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  labs(
+    title = "Failed Transactions in a 24-Hour Period by Fraud Status",
+    x = "Number of Failed Transactions",
+    fill = "Fraud Flag"
+  )
+
+
+ggplot(df2, aes(x = account_age_days, fill = factor(fraud_flag))) +
+  geom_density(alpha = 0.4) +
+  labs(
+    title = "Account Age Distribution by Fraud Status",
+    x = "Account Age (Days)",
+    fill = "Fraud Flag"
+  )
+
+```
+The number of transactions within a 24-hour period appeared to be strongly associated with fraudulent behavior. Fraudulent transactions became increasingly dominant at higher transaction frequencies, suggesting that transaction velocity may be an important indicator of fraud risk.
+
+```{r}
+# Select numerical variables for correlation analysis.
+
+numeric_df <- df2 %>%
+  select(where(is.numeric))
+
+
+# Compute the correlation matrix between numerical variables.
+
+cor(numeric_df)
+```
+The Correlation analysis between numerical variables revealed very weak linear relationships across features. This suggests that multicollinearity is unlikely to be a major issue for the logistic regression model and that numerical variables may provide complementary predictive information.
+
+
+# Train/Test Split
+```{r}
+# Split the dataset into training and testing datasets using stratified sampling to preserve the fraud class distribution.
+
+set.seed(123)
+
+train_index <- createDataPartition(
+  df2$fraud_flag,
+  p = 0.8,
+  list = FALSE
+)
+
+train_data <- df2[train_index, ]
+
+test_data <- df2[-train_index, ]
+
+
+# Display the number of observations in each dataset.
+
+dim(train_data)
+
+dim(test_data)
+
+# Verify that the fraud class distribution remains consistent across the training and testing datasets.
+
+prop.table(table(train_data$fraud_flag))
+
+prop.table(table(test_data$fraud_flag))
+```
+
+The class distribution remained consistent between the training and testing datasets, confirming that the stratified sampling approach successfully preserved the original fraud class proportions.
+
+# test GLM
+
+```{r}
+# GLM Baseline Model
+
+
+glm_test <- glm(
+  fraud_flag ~ .,
+  data = train_data,
+  family = "binomial"
+)
+
+summary(glm_test)
+```
+
+Some fraud-related variables appeared to provide near-perfect predictive power, resulting in signs of quasi-perfect separation within the GLM model.
+To improve model interpretability and simulate a more realistic fraud detection environment, an alternative reduced model excluding highly deterministic fraud-related variables was also explored.
+
+
+
+
+```{r}
+
+
+train_data <- train_data %>%
+  select(
+    -previous_fraud_flag,
+    -unusual_amount_flag,
+    -high_risk_device_flag,
+    -velocity_flag
+  )
+
+test_data <- test_data %>%
+  select(
+    -previous_fraud_flag,
+    -unusual_amount_flag,
+    -high_risk_device_flag,
+    -velocity_flag
+  )
+
+
+# Remove highly deterministic fraud-related variables that may have been generated using pre-existing fraud models or business rules. Excluding these variables helps create a more realistic fraud detection scenario and reduces the risk of feature leakage.
+
+```
+
+```{r}
+glm_test2 <- glm(
+  fraud_flag ~ .,
+  data = train_data,
+  family = "binomial"
+)
+
+summary(glm_test2)
+```
+The reduced model appears to provide a more realistic and interpretable representation of fraud behavior patterns.
+
+
+# GLM Model
+```{r}
+
+# The GLM is used as an interpretable baseline model.
+# Since the target variable is binary, we use logistic regression with a binomial family.
+
+glm_full <- glm(
+  fraud_flag ~ .,
+  data = train_data,
+  family = "binomial"
+)
+
+summary(glm_full)
+
+
+# Full GLM - Predictions on Test Data
+
+glm_prob <- predict(
+  glm_full,
+  newdata = test_data,
+  type = "response"
+)
+
+
+# Full GLM - ROC Curve and Optimal Cutoff
+
+glm_roc <- roc(
+  response = as.numeric(as.character(test_data$fraud_flag)),
+  predictor = glm_prob
+)
+
+optimal_cutoff <- coords(
+  glm_roc,
+  x = "best",
+  best.method = "youden",
+  ret = "threshold",
+  transpose = FALSE
+)
+
+optimal_cutoff <- as.numeric(optimal_cutoff$threshold)
+
+optimal_cutoff
+
+
+# Full GLM - Predicted Classes Using Optimal Cutoff
+
+glm_pred_optimal <- ifelse(
+  glm_prob >= optimal_cutoff,
+  1,
+  0
+)
+
+
+# Full GLM - Confusion Matrix
+
+confusionMatrix(
+  factor(glm_pred_optimal, levels = c(0, 1)),
+  factor(test_data$fraud_flag, levels = c(0, 1)),
+  positive = "1"
+)
+
+
+# Full GLM - ROC Curve and AUC
+
+plot(glm_roc, main = "ROC Curve - Full GLM")
+
+glm_auc <- auc(glm_roc)
+
+glm_auc
+
+
+
+# Variable Selection Using drop1()
+
+# drop1() tests the contribution of each original variable, to the model, rather than testing each dummy variable separately.
+# This is useful when categorical variables are included in the model.
+
+drop_results <- drop1(
+  glm_full,
+  test = "Chisq"
+)
+
+drop_results
+
+
+# Extract variables with p-value below 5%.
+# We remove NA values and the special "<none>" row before creating the formula.
+
+drop_results_df <- as.data.frame(drop_results)
+
+significant_vars <- rownames(drop_results_df)[
+  !is.na(drop_results_df$`Pr(>Chi)`) &
+    drop_results_df$`Pr(>Chi)` < 0.05
+]
+
+significant_vars <- setdiff(significant_vars, "<none>")
+
+significant_vars
+
+# Build the partial GLM formula using only statistically significant variables.
+
+partial_formula <- reformulate(
+  significant_vars,
+  response = "fraud_flag"
+)
+
+partial_formula
+
+
+# Train the partial GLM model using only significant variables.
+
+glm_partial <- glm(
+  partial_formula,
+  data = train_data,
+  family = "binomial"
+)
+
+summary(glm_partial)
+
+# Partial GLM - Predictions on Test Data
+
+
+partial_prob <- predict(
+  glm_partial,
+  newdata = test_data,
+  type = "response"
+)
+
+
+
+# Partial GLM - ROC Curve and Optimal Cutoff
+
+
+partial_roc <- roc(
+  response = as.numeric(as.character(test_data$fraud_flag)),
+  predictor = partial_prob
+)
+
+partial_cutoff <- coords(
+  partial_roc,
+  x = "best",
+  best.method = "youden",
+  ret = "threshold",
+  transpose = FALSE
+)
+
+partial_cutoff <- as.numeric(partial_cutoff$threshold)
+
+partial_cutoff
+
+
+# Partial GLM - Predicted Classes Using Optimal Cutoff
+
+
+partial_pred_optimal <- ifelse(
+  partial_prob >= partial_cutoff,
+  1,
+  0
+)
+
+
+# Partial GLM - Confusion Matrix
+
+confusionMatrix(
+  factor(partial_pred_optimal, levels = c(0, 1)),
+  factor(test_data$fraud_flag, levels = c(0, 1)),
+  positive = "1"
+)
+
+
+# Partial GLM - ROC Curve and AUC
+
+
+plot(partial_roc, main = "ROC Curve - Partial GLM")
+
+partial_auc <- auc(partial_roc)
+
+partial_auc
+
+```
+The full GLM model was first used as an interpretable baseline. A reduced partial GLM model was then created using `drop1()` to identify statistically significant variables at the 5% level. This approach keeps categorical variables at the original variable level rather than selecting individual dummy variables, making the reduced model more interpretable and statistically coherent.
+
+
+```{r}
+
+#  Ridge / Lasso Logistic Regression
+
+
+# Create model matrices
+x_train <- model.matrix(fraud_flag ~ ., train_data)[, -1]
+y_train <- train_data$fraud_flag
+
+x_test <- model.matrix(fraud_flag ~ ., test_data)[, -1]
+y_test <- test_data$fraud_flag
+
+# Ridge: alpha = 0
+set.seed(123)
+
+ridge_model <- cv.glmnet(
+  x_train,
+  y_train,
+  family = "binomial",
+  alpha = 0,
+  type.measure = "auc"
+)
+
+ridge_prob <- predict(
+  ridge_model,
+  newx = x_test,
+  s = "lambda.min",
+  type = "response"
+)
+
+ridge_roc <- roc(
+  response = as.numeric(as.character(y_test)),
+  predictor = as.numeric(ridge_prob)
+)
+
+ridge_cutoff <- coords(
+  ridge_roc,
+  x = "best",
+  best.method = "youden",
+  ret = "threshold",
+  transpose = FALSE
+)
+
+ridge_cutoff <- as.numeric(ridge_cutoff$threshold)
+
+ridge_pred_optimal <- ifelse(
+  as.numeric(ridge_prob) >= ridge_cutoff,
+  1,
+  0
+)
+
+confusionMatrix(
+  factor(ridge_pred_optimal, levels = c(0, 1)),
+  factor(y_test, levels = c(0, 1)),
+  positive = "1"
+)
+
+plot(ridge_roc, main = "ROC Curve - Ridge Logistic Regression")
+
+ridge_auc <- auc(ridge_roc)
+ridge_auc
+
+
+# Lasso: alpha = 1
+set.seed(123)
+
+lasso_model <- cv.glmnet(
+  x_train,
+  y_train,
+  family = "binomial",
+  alpha = 1,
+  type.measure = "auc"
+)
+
+lasso_prob <- predict(
+  lasso_model,
+  newx = x_test,
+  s = "lambda.min",
+  type = "response"
+)
+
+lasso_roc <- roc(
+  response = as.numeric(as.character(y_test)),
+  predictor = as.numeric(lasso_prob)
+)
+
+lasso_cutoff <- coords(
+  lasso_roc,
+  x = "best",
+  best.method = "youden",
+  ret = "threshold",
+  transpose = FALSE
+)
+
+lasso_cutoff <- as.numeric(lasso_cutoff$threshold)
+
+lasso_pred_optimal <- ifelse(
+  as.numeric(lasso_prob) >= lasso_cutoff,
+  1,
+  0
+)
+
+confusionMatrix(
+  factor(lasso_pred_optimal, levels = c(0, 1)),
+  factor(y_test, levels = c(0, 1)),
+  positive = "1"
+)
+
+plot(lasso_roc, main = "ROC Curve - Lasso Logistic Regression")
+
+lasso_auc <- auc(lasso_roc)
+lasso_auc
+```
+
+
+
+```{r}
+
+# Decision Tree Model
+
+# A decision tree is used to capture nonlinear relationships, between variables while remaining highly interpretable.
+
+
+set.seed(123)
+
+tree_model <- rpart(
+  fraud_flag ~ .,
+  data = train_data,
+  method = "class"
+)
+
+summary(tree_model)
+
+
+
+# Decision Tree Visualization
+
+# Visualize the tree structure and decision rules.
+
+rpart.plot(
+  tree_model,
+  type = 2,
+  extra = 104,
+  fallen.leaves = TRUE
+)
+
+
+# Decision Tree - Predictions on Test Data
+
+
+tree_prob <- predict(
+  tree_model,
+  newdata = test_data,
+  type = "prob"
+)[,2]
+
+tree_pred <- ifelse(tree_prob >= 0.5, 1, 0)
+
+
+# Decision Tree - Confusion Matrix
+
+
+confusionMatrix(
+  factor(tree_pred),
+  factor(test_data$fraud_flag),
+  positive = "1"
+)
+
+
+# Decision Tree - ROC Curve and AUC
+
+
+tree_roc <- roc(
+  test_data$fraud_flag,
+  tree_prob
+)
+
+plot(tree_roc, main = "ROC Curve - Decision Tree")
+
+tree_auc <- auc(tree_roc)
+
+tree_auc
+```
+The Decision Tree structure highlights the importance of behavioral transaction variables in fraud classification decisions.
+
+Variables such as international transactions, transaction frequency, failed transaction attempts, and multiple transactions within short periods appeared near the top of the tree, indicating that they played a major role in the model’s decision-making process.
+
+
+
+The tree visualization also demonstrates how nonlinear decision rules and variable interactions can naturally emerge in fraud detection models.
+
+
+
+The Decision Tree model was included as a more interpretable nonlinear modeling approach. Unlike logistic regression, decision trees can naturally capture interaction effects and nonlinear relationships between predictors.
+
+However, single decision trees are generally less stable and less accurate than ensemble methods such as Random Forest models.
+
+```{r}
+
+#  Random Forest
+
+
+set.seed(123)
+
+rf_model <- ranger(
+  fraud_flag ~ .,
+  data = train_data,
+  probability = TRUE,
+  importance = "impurity",
+  num.trees = 500
+)
+
+rf_prob <- predict(rf_model, data = test_data)$predictions[, "1"]
+rf_pred <- ifelse(rf_prob >= 0.5, 1, 0)
+
+confusionMatrix(
+  factor(rf_pred),
+  factor(test_data$fraud_flag),
+  positive = "1"
+)
+
+rf_roc <- roc(test_data$fraud_flag, rf_prob)
+plot(rf_roc, main = "ROC Curve - Random Forest")
+auc(rf_roc)
+```
+The Random Forest model achieved the strongest predictive performance among all evaluated models, with the highest AUC score and improved classification accuracy compared to the linear models.
+
+This result suggests that fraud behavior may involve complex nonlinear relationships and interaction effects that are not fully captured by traditional logistic regression models.
+
+In addition to improved predictive performance, Random Forest models are generally more robust to multicollinearity and better suited for capturing complex behavioral fraud patterns across multiple variables simultaneously.
+
+However, Random Forest models are typically less interpretable than logistic regression models, making it more difficult to directly quantify the impact of individual variables on fraud probability.
+
+```{r}
+
+#  Feature Importance - Random Forest
+
+
+importance_df <- data.frame(
+  Variable = names(rf_model$variable.importance),
+  Importance = rf_model$variable.importance
+)
+
+importance_df <- importance_df %>%
+  arrange(desc(Importance))
+
+importance_df
+
+ggplot(importance_df[1:12, ], aes(x = reorder(Variable, Importance), y = Importance)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Most Important Variables - Random Forest",
+    x = "Variable",
+    y = "Importance"
+  )
+```
+The Random Forest variable importance analysis suggests that behavioral transaction variables contributed most strongly to fraud prediction performance.
+
+International transactions appeared to be the most influential predictor, followed by transaction amount, transaction frequency, failed transaction attempts, and average transaction behavior over the previous 7 days.
+
+These findings reinforce the idea that fraud detection is primarily driven by abnormal behavioral patterns rather than static customer characteristics.
+
+The relatively lower importance of variables such as payment method, device type, and weekday/weekend activity suggests that these variables may contribute less predictive information compared to transaction behavior indicators.
+
+Interestingly, many of the variables identified as highly important by the Random Forest model were also retained in the reduced Partial GLM model through the statistical variable selection process using `drop1()`. This consistency across multiple modeling approaches strengthens the reliability of the findings and suggests that these behavioral variables contain meaningful predictive information for fraud detection.
+
+```{r}
+
+#  Model Comparison Table
+
+model_results <- data.frame(
+  Model = c(
+    "GLM Full",
+    "GLM Partial",
+    "Ridge",
+    "Lasso",
+    "Decision Tree",
+    "Random Forest"
+  ),
+  AUC = c(
+    glm_auc,
+    partial_auc,
+    auc(ridge_roc),
+    auc(lasso_roc),
+    tree_auc,
+    auc(rf_roc)
+  )
+)
+
+model_results
+```
+
+The Random Forest model achieved the highest AUC score, suggesting that it provided the strongest overall discriminatory power between fraudulent and non-fraudulent transactions.
+
+This result suggests that nonlinear relationships and interactions between predictors may be important in fraud detection. However, the GLM remains valuable because it provides stronger interpretability through coefficients and odds ratios.
