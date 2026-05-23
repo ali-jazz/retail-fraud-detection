@@ -1,5 +1,10 @@
 # Retail Fraud Detection Analysis
 
+## Live Project
+
+[View Full HTML Report](https://ali-jazz.github.io/retail-fraud-detection/)
+
+---
 ## Project Overview
 
 This project explores fraud detection using statistical and machine learning techniques in R. The objective was to identify behavioral patterns associated with fraudulent retail transactions and compare the predictive performance of several classification models.
