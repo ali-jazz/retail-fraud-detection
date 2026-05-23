@@ -168,7 +168,7 @@ Models were evaluated using:
 
 The analysis demonstrated that fraudulent retail transactions can effectively be detected using customer and transaction behavior variables. Several models achieved strong predictive performance, suggesting that transaction behavior contains meaningful fraud-related signals.
 
-![Decision Tree](Images/decision_tree.png)
+![Decision Tree](images/decision_tree.png)
 
 ---
 
@@ -178,7 +178,8 @@ Among all evaluated models, the Random Forest model achieved the highest AUC sco
 
 This suggests that nonlinear relationships and interaction effects between variables play an important role in fraud detection.
 
-![ROC Comparison](Images/ROC.png)
+![ROC Comparison](images/ROC.png)
+
 ---
 
 ### 3. Important Fraud Indicators
@@ -191,7 +192,7 @@ Several behavioral variables appeared strongly associated with fraudulent activi
 - failed transaction attempts
 - transaction velocity indicators
 
-![Important Fraud Indicators](Images/Variable_importance.png)
+![Important Fraud Indicators](images/Variable_importance.png)
 
 These findings suggest that behavioral transaction patterns may be more informative for fraud detection than static customer characteristics alone.
 
