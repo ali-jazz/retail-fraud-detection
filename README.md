@@ -266,6 +266,7 @@ Potential future improvements include:
 ├── index.html
 ├── images/
 ├── README.md
+├── LICENCE
 ```
 
 ---
@@ -275,5 +276,3 @@ Potential future improvements include:
 ### Ali Jazzar
 
 - Actuarial Analyst
-- Data Analytics & Statistical Modeling Enthusiast
-- Passionate about fraud analytics, predictive modeling, and data-driven decision-making
