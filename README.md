@@ -257,8 +257,8 @@ Potential future improvements include:
 ```text
 ├── data/
 ├── Retail_Fraud.Rmd
-├── Retail_Fraud.html
-├── Images/
+├── index.html
+├── images/
 ├── README.md
 ```
 
